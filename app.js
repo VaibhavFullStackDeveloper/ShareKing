@@ -30,9 +30,9 @@ const usersRoutes = require('./routers/users');
 const api=process.env.API_URL;
 
 // Adding routes
-app.use(`${api}/brocker`, brockerRoutes);
-app.use(`${api}/admin`, adminRoutes);
-app.use(`${api}/users`, usersRoutes);
+//app.use(`${api}/brocker`, brockerRoutes);
+//app.use(`${api}/admin`, adminRoutes);
+//app.use(`${api}/users`, usersRoutes);
 
 // Database Connection
 mongoose.connect(process.env.CONNECTION_STRING,
