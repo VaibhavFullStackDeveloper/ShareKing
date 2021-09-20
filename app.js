@@ -34,7 +34,7 @@ const api=process.env.API_URL;
 //app.use(`${api}/admin`, adminRoutes);
 ///app.use(`${api}/users`, usersRoutes);
 
-// Database Connection
+/// Database Connection
 mongoose.connect(process.env.CONNECTION_STRING,
     {
         useNewUrlParser: true,
