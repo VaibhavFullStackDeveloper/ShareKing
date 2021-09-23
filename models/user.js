@@ -5,6 +5,9 @@ const userSchema = mongoose.Schema({
         type : String,
         required:true,
     },
+    mobile:{
+
+    },
     userName:{
         type : String,
         required:true,
@@ -21,26 +24,21 @@ const userSchema = mongoose.Schema({
         type : String,
         default: '',
     },
-    config:{
-        orders_high_low:{
-            type : Boolean,
-            default : false,
-            required:true
-        },
-        trigger_order_high_low:{
-            type: String,
-            default : '',
-        },
-        auto_close:{
-            type :Number,
-            default:0,
-        },
-        notify_client:{
-            type: Number,
-            default:0,
-        }
+    admin:{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : 'Admin',
+        required : true,
     },
-
+    config:{
+        orderBetweenHighLow:{
+            type:Boolean,
+            default:true,
+        },
+        settingB:{
+            type:Boolean,
+            default:true,
+        }
+    }
 })
 userSchema.virtual('id').get(function(){
     return this._id.toHexString();

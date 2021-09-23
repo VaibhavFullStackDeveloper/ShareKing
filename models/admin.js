@@ -25,6 +25,11 @@ const adminSchema = mongoose.Schema({
         type : String,
         required:true,
     },
+    userType:{
+        type:String,
+        required:true,
+        default:'admin',
+    }
 })
 
 adminSchema.virtual('id').get(function(){
@@ -35,5 +40,5 @@ adminSchema.set('toJSON',{
     virtuals: true,
 })
 
-exports.Admin = mongoose.model('admins', adminSchema);
+exports.Admin = mongoose.model('Admin', adminSchema);
 exports.adminSchema=adminSchema; 

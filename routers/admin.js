@@ -1,20 +1,24 @@
 const {Admin} =require('../models/admin');
+const {User} =require('../models/user');
 const express = require('express');
 const router =express.Router();
 const bcrypt = require('bcryptjs');
 require('dotenv/config');
-const gettoken = require('../helpers/getIdFromToken');
+const decodedToken = require('../helpers/decodeToken');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
 // Get All Admin Api
 
  router.get(`/`, async (req,res)=>{
-   
-    const bearerToken=gettoken(req.headers['authorization']);
-    console.log('decoded',bearerToken)
-   // console.log('decoded',decoded.adminID);
-
+    const token=req.headers['authorization'];
+    if(!token)
+    return res.status(200).json({success:false, message:"Token not Found.", data:[]});
+    const bearerToken=decodedToken(token);
+    if(bearerToken.type!='super_admin')
+    {
+        return res.status(200).json({success:false, message:"You are not authorized user to add admin.", data:[]});
+    }
      const adminList = await Admin.find().select('-passwordHash');
      if(!adminList){
          res.status(500).json({success: false})
@@ -25,9 +29,15 @@ const jwt = require('jsonwebtoken');
  
 // To Get Admin by ID
 
-router.get(`/:id`, async (req,res)=>{
-    const bearerToken=gettoken(req.headers['authorization']);
-    console.log('decoded',bearerToken.adminID)
+router.get('/:id', async (req,res)=>{
+    const token=req.headers['authorization'];
+    if(!token)
+    return res.status(200).json({success:false, message:"Token not Found.", data:[]});
+    const bearerToken=decodedToken(token);
+   if(bearerToken.type!='super_admin')
+   {
+       return res.status(200).json({success:false, message:"You are not authorized user to add admin.", data:[]});
+   }
 
     const admin = await Admin.findById(req.params.id);
     if(!admin){
@@ -39,10 +49,18 @@ router.get(`/:id`, async (req,res)=>{
   // To register new Admin
 
   router.post(`/`, async (req,res)=>{
+    const token=req.headers['authorization'];
+    if(!token)
+    return res.status(200).json({success:false, message:"Token not Found.", data:[]});
+    const bearerToken=decodedToken(token);
+   if(bearerToken.type!='super_admin')
+   {
+       return res.status(200).json({success:false, message:"You are not authorized user to add admin.", data:[]});
+   }
    const oldadmin = await Admin.findOne({email: req.body.email})
     if(oldadmin)
     {
-        return res.status(404).json({success:false, message:"The User with same email already exist.", data:[]});
+        return res.status(200).json({success:false, message:"The User with same email already exist.", data:[]});
     }
 
     let admin = new Admin({
@@ -77,12 +95,12 @@ router.post('/login', async(req,res)=>{
         const token = jwt.sign(
             {
                 adminID: admin.id,
-                isAdmin: admin.isAdmin
+                isAdmin: admin.isAdmin,
+                userType:admin.userType
             },
             secret,
             {
-                expiresIn:'1d', //for 1 day 1d, for 1 month 1m, for 1week 1w
-
+                expiresIn:'1y', //for 1 day 1d, for 1 month 1m, for 1week 1w
             }
         )
 	admin = await Admin.findOne({email: req.body.email}).select('-passwordHash');
@@ -124,6 +142,14 @@ router.put('/:id', async (req,res) =>{
 // To Delete Admin
 
  router.delete('/:id', (req,res)=>{
+    const token=req.headers['authorization'];
+    if(!token)
+    return res.status(200).json({success:false, message:"Token not Found.", data:[]});
+    const bearerToken=decodedToken(token);
+    if(bearerToken.type!='super_admin')
+    {
+        return res.status(200).json({success:false, message:"You are not authorized user to add admin.", data:[]});
+    }   
     Admin.findByIdAndRemove(req.params.id).then(admin=>{
         if(admin){
             return res.status(200).json({success:true, message: 'Admin deleted successfully'})
@@ -137,10 +163,72 @@ router.put('/:id', async (req,res) =>{
    })
   
 
-   // To Add New Users
+   // To Add New User
 
-   
+    router.post(`/add-user`, async (req,res)=>{
+        const token=req.headers['authorization'];
+        if(!token)
+        return res.status(200).json({success:false, message:"Token not Found.", data:[]});
+        const bearerToken=decodedToken(token);
+    if(bearerToken.userType!='admin')
+    {
+        return res.status(200).json({success:false, message:"You are not authorized user.", data:[]});
+    }
+    const adminId=bearerToken.adminID;
+
+    const admin = await Admin.findById(adminId);
+    if(!admin)
+    return res.status(200).send('Invalid Admin Id.'); 
+
+    const olduser = await User.findOne({userName: req.body.userName})
+     if(olduser)
+     {
+         return res.status(200).json({success:false, message:"The User with same email already exist.", data:[]});
+     }
+     let user = new User({
+         name : req.body.name,
+         userName: req.body.userName,
+         creditLimit : req.body.creditLimit,
+         city: req.body.city,
+         admin: adminId,
+         passwordHash : bcrypt.hashSync(req.body.password, 10) ,
+         config: {
+            orderBetweenHighLow: req.body.config.orderBetweenHighLow
+            
+         }
+         
+     })
+    
+     user = await user.save();
+     if(!user)
+     return res.status(200).json({success:true, message:"User not registered.", data: user});
+     res.json({success:true, message:"User registered successfully.", data: user});
+ }) 
 
 
+ // Get All admin users
+
+ router.get('/get/all-user/', async (req,res)=>{
+    const token=req.headers['authorization'];
+    if(!token)
+    return res.status(200).json({success:false, message:"Token not Found.", data:[]});
+    const bearerToken=decodedToken(token);
+    if(bearerToken.userType!='admin')
+    {
+        return res.status(200).json({success:false, message:"You are not authorized user.", data:[]});
+    }
+    const adminId=bearerToken.adminID;
+    let filter={}
+    if(adminId)
+    {
+     filter ={admin: adminId }
+    }
+     const userList = await User.find({ filter }).select('-passwordHash');
+     if(!userList){
+         res.status(500).json({success: false})
+     }
+      res.send(userList);
+    
+  })
 
  module.exports= router;
