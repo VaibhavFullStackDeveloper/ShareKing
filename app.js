@@ -31,7 +31,7 @@ const api=process.env.API_URL;
 
 // Adding routes
 //app.use(`${api}/brocker`, brockerRoutes);
-//app.use(`${api}/admin`, adminRoutes);
+app.use(`${api}/admin`, adminRoutes);
 ///app.use(`${api}/users`, usersRoutes);
 
 /// Database Connection
@@ -39,7 +39,7 @@ mongoose.connect(process.env.CONNECTION_STRING,
     {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        dbName:'myfirstapp',
+ 	dbName:'sharkingdb'
     })
 .then(()=>{
     console.log('Database Connected now.');
@@ -49,8 +49,8 @@ mongoose.connect(process.env.CONNECTION_STRING,
 })
 
 //Check Server running or not
-app.listen(3000, ()=>{
-    console.log('server is running now http://localhost:3000');
+app.listen(8000, ()=>{
+    console.log('server is running now http://localhost:8000');
 })
 
 app.get('/protected',
