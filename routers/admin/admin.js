@@ -1,10 +1,10 @@
-const {Admin} =require('../models/admin');
-const {User} =require('../models/user');
+const {Admin} =require('../../models/admin');
+const {ActionLedger} = require('../../models/action-ledger');
 const express = require('express');
 const router =express.Router();
 const bcrypt = require('bcryptjs');
 require('dotenv/config');
-const decodedToken = require('../helpers/decodeToken');
+const decodedToken = require('../../helpers/decodeToken');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
@@ -17,7 +17,7 @@ const jwt = require('jsonwebtoken');
     const bearerToken=decodedToken(token);
     if(bearerToken.type!='super_admin')
     {
-        return res.status(200).json({success:false, message:"You are not authorized user to add admin.", data:[]});
+       return res.status(200).json({success:false, message:"You are not authorized user to add admin.", data:[]});
     }
      const adminList = await Admin.find().select('-passwordHash');
      if(!adminList){
@@ -82,8 +82,8 @@ router.get('/:id', async (req,res)=>{
 
 router.post('/login', async(req,res)=>{
 
-    // check admin Exist with emailID
-    let admin = await Admin.findOne({email: req.body.email});
+    // check admin Exist with userName
+    let admin = await Admin.findOne({userName: req.body.userName});
     if(!admin)
     {
         return  res.status(200).json({success:false, message:"Admin Not found.", data:[], token:""});
@@ -103,7 +103,7 @@ router.post('/login', async(req,res)=>{
                 expiresIn:'1y', //for 1 day 1d, for 1 month 1m, for 1week 1w
             }
         )
-	admin = await Admin.findOne({email: req.body.email}).select('-passwordHash');
+	admin = await Admin.findOne({userName: req.body.userName}).select('-passwordHash');
     if(admin);
         res.status(200).json({success:true, message:"Logged in Successfully.", data: admin, token:token});
     }   
@@ -162,73 +162,21 @@ router.put('/:id', async (req,res) =>{
     })
    })
   
+   // To Get Action Ledger Details
 
-   // To Add New User
-
-    router.post(`/add-user`, async (req,res)=>{
-        const token=req.headers['authorization'];
-        if(!token)
-        return res.status(200).json({success:false, message:"Token not Found.", data:[]});
-        const bearerToken=decodedToken(token);
-    if(bearerToken.userType!='admin')
-    {
-        return res.status(200).json({success:false, message:"You are not authorized user.", data:[]});
-    }
-    const adminId=bearerToken.adminID;
-
-    const admin = await Admin.findById(adminId);
-    if(!admin)
-    return res.status(200).send('Invalid Admin Id.'); 
-
-    const olduser = await User.findOne({userName: req.body.userName})
-     if(olduser)
-     {
-         return res.status(200).json({success:false, message:"The User with same email already exist.", data:[]});
-     }
-     let user = new User({
-         name : req.body.name,
-         userName: req.body.userName,
-         creditLimit : req.body.creditLimit,
-         city: req.body.city,
-         admin: adminId,
-         passwordHash : bcrypt.hashSync(req.body.password, 10) ,
-         config: {
-            orderBetweenHighLow: req.body.config.orderBetweenHighLow
-            
-         }
-         
-     })
-    
-     user = await user.save();
-     if(!user)
-     return res.status(200).json({success:true, message:"User not registered.", data: user});
-     res.json({success:true, message:"User registered successfully.", data: user});
- }) 
-
-
- // Get All admin users
-
- router.get('/get/all-user/', async (req,res)=>{
+router.get('/get/action-ledger', async (req,res)=>{
     const token=req.headers['authorization'];
     if(!token)
     return res.status(200).json({success:false, message:"Token not Found.", data:[]});
     const bearerToken=decodedToken(token);
-    if(bearerToken.userType!='admin')
-    {
-        return res.status(200).json({success:false, message:"You are not authorized user.", data:[]});
-    }
     const adminId=bearerToken.adminID;
-    let filter={}
-    if(adminId)
-    {
-     filter ={admin: adminId }
+    const actionLedgerNotifications = await ActionLedger.findById(adminId);
+    if(actionLedgerNotifications){
+        return res.status(200).json({success:true, message: 'All Action ledgers', data:actionLedgerNotifications})
     }
-     const userList = await User.find({ filter }).select('-passwordHash');
-     if(!userList){
-         res.status(500).json({success: false})
-     }
-      res.send(userList);
-    
-  })
+    else{
+        return res.status(200).json({success:false, message: 'ledgers not found', data:[]})
+    }
+ })
 
- module.exports= router;
+ module.exports =router;

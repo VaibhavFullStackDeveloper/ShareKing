@@ -13,10 +13,6 @@ const adminSchema = mongoose.Schema({
         type : String,
         required:true,
     },
-    email:{
-        type: String,
-        required: true,
-    },
    isAdmin:{
         type: Boolean,
         default: true,
@@ -25,10 +21,14 @@ const adminSchema = mongoose.Schema({
         type : String,
         required:true,
     },
-    userType:{
+    userType : {
         type:String,
         required:true,
         default:'admin',
+    },
+    transactionPassword : {
+        type : String,
+        required : true,
     }
 })
 
